@@ -20,6 +20,15 @@ canvas#map {
     padding: 0px;
 }
 
+div.floaty {
+    position: absolute;
+    margin-top: 10px;
+    margin-left: 10px;
+    width: 200px;
+    heigth: 100px;
+    z-index: 1;
+}
+
 /*
 body {
     background: #fafafa;

@@ -38,9 +38,22 @@ app.directive("ngMap", function($window) {
       var canvas = element[0];
       var ctx = canvas.getContext('2d');
 
-      scope.lat = DEFAULT_LAT;
       scope.lng = DEFAULT_LNG;
+      scope.lat = DEFAULT_LAT;
       scope.zm = DEFAULT_ZM;
+
+      scope.$watch('lng', function(newVal, oldVal) {
+        console.log('watch lng', newVal, oldVal);
+        draw();
+      });
+      scope.$watch('lat', function(newVal, oldVal) {
+        console.log('watch lat', newVal, oldVal);
+        draw();
+      });
+      scope.$watch('zm', function(newVal, oldVal) {
+        console.log('watch zm', newVal, oldVal);
+        draw();
+      });
 
       // directive state
       var lastMouseX = 0;
@@ -71,10 +84,12 @@ app.directive("ngMap", function($window) {
           var dY = y - lastMouseY;
           console.log("before scope.lng", scope.lng);
           console.log("x:", x, "dX:", dX);
-          scope.lng -= dX * Math.pow(2, MAX_ZM - scope.zm);
-          scope.lat -= dY * Math.pow(2, MAX_ZM - scope.zm);
+          scope.$apply(function() {
+            scope.lng -= dX * Math.pow(2, MAX_ZM - scope.zm);
+            scope.lat -= dY * Math.pow(2, MAX_ZM - scope.zm);
+          });
           console.log("after scope.lng", scope.lng);
-          draw();
+          //draw();
         }
         lastMouseX = x;
         lastMouseY = y;
@@ -116,29 +131,33 @@ app.directive("ngMap", function($window) {
 
           console.log('zoomFocus x1 y1', x1, y1)
 
-          scope.lng += x1/2;
-          scope.lat += y1/2;
-          scope.zm++;
-          draw();
+          scope.$apply(function() {
+            scope.lng += x1/2;
+            scope.lat += y1/2;
+            scope.zm++;
+          });
+          //draw();
         }
       }
 
       function zoomOut(x, y) {
         if (scope.zm > 0) {
-          console.log('zoomFocus', x, y)
+          scope.$apply(function() {
+            console.log('zoomFocus', x, y)
 
-          scope.zm--;
-          var z = scope.zm;
-          var w = canvas.width * Math.pow(2, MAX_ZM - z);
-          var h = canvas.height * Math.pow(2, MAX_ZM - z);
-          var x1 = x * Math.pow(2, MAX_ZM - z) - w/2;
-          var y1 = y * Math.pow(2, MAX_ZM - z) - h/2;
+            scope.zm--;
+            var z = scope.zm;
+            var w = canvas.width * Math.pow(2, MAX_ZM - z);
+            var h = canvas.height * Math.pow(2, MAX_ZM - z);
+            var x1 = x * Math.pow(2, MAX_ZM - z) - w/2;
+            var y1 = y * Math.pow(2, MAX_ZM - z) - h/2;
 
-          console.log('zoomFocus x1 y1', x1, y1)
+            console.log('zoomFocus x1 y1', x1, y1)
 
-          scope.lng -= x1/2;
-          scope.lat -= y1/2;
-          draw();
+            scope.lng -= x1/2;
+            scope.lat -= y1/2;
+          });
+          //draw();
         }
       }
 
@@ -153,6 +172,25 @@ app.directive("ngMap", function($window) {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         draw();
+      }
+
+      // true if the tile is outside the view.
+      function isOutsideWindow(t) {
+        var pos = decodeKey(t);
+        var lng = pos[0];
+        var lat = pos[1];
+        var zm = pos[2];
+
+        var w = canvas.width * Math.pow(2, MAX_ZM - zm);
+        var h = canvas.height * Math.pow(2, MAX_ZM - zm);
+
+        var x = lng * Math.pow(2, MAX_ZM - zm);
+        var y = lat * Math.pow(2, MAX_ZM - zm);
+
+        var sz = TILE_SZ * Math.pow(2, MAX_ZM - zm);
+        if (x > scope.lng + w/2 || y > scope.lat + h/2 || x + sz < scope.lng - w/2 || y - sz < scope.lat - h/2)
+          return true;
+        return false;
       }
 
       function draw() {
@@ -186,6 +224,8 @@ app.directive("ngMap", function($window) {
                 tiles[tileKey].onload = function() {
                   // TODO: could we just do a partial draw of the single tile
                   draw();
+                  // TODO: add a preload routine, to fetch at the next zoom level,
+                  // once all the tiles on the this level have loaded
                 }
               }
               //console.log("draw() 5");
@@ -225,25 +265,6 @@ function tileUrl(lng, lat, zm) {
   var lng = n[0]; lat = n[1]; zm = n[2];
   var url = "http://a.tile.openstreetmap.org/" + zm + "/" + lng + "/" + lat + ".png";
   return url;
-}
-
-// true if the tile is outside the view.
-function isOutsideWindow(t) {
-  var pos = decodeKey(t);
-  var lng = pos[0];
-  var lat = pos[1];
-  var zm = pos[2];
-
-  var w = canvas.width * Math.pow(2, MAX_ZM - zm);
-  var h = canvas.height * Math.pow(2, MAX_ZM - zm);
-
-  var x = lng * Math.pow(2, MAX_ZM - zm);
-  var y = lat * Math.pow(2, MAX_ZM - zm);
-
-  var sz = TILE_SZ * Math.pow(2, MAX_ZM - zm);
-  if (x > posX + w/2 || y > posY + h/2 || x + sz < posX - w/2 || y - sz < posY - h/2)
-    return true;
-  return false;
 }
 
 

@@ -1,3 +1,9 @@
-<canvas ng-map id="map">
-
-</canvas>
+<div ng-controller="MainCtrl">
+    <div class="floaty">
+        <input type="number" ng-model="lat" />
+        <input type="number" ng-model="lng"/>
+        <input type="number" ng-model="zm"/>
+    </div>
+    <canvas ng-map id="map">
+    </canvas>
+</div>

@@ -7,4 +7,7 @@ angular.module('mapApp')
       'AngularJS',
       'Karma'
     ];
+    $scope.lng = 0;
+    $scope.lat = 0;
+    $scope.zm = 1;
   });
